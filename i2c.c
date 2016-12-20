@@ -4,6 +4,7 @@
 #include <stm32.h>
 #include "usart.h"
 #include "leds.h"
+#include "timer.h"
 
 #define LIS35DE_ADDR 0x1C
 #define I2C_SPEED_HZ 100000
@@ -136,14 +137,6 @@ int i2c_accel_read(uint8_t reg, uint8_t *value) {
     return 0;
 }
 
-static void single_click(void) {
-    toggle_led(LED_RED);
-}
-
-static void double_click(void) {
-    toggle_led(LED_BLUE);
-}
-
 static void handle_interrupt(void) {
     uint8_t src;
     i2c_accel_read(I2C_ACCEL_REG_CLICK_SRC, &src);
@@ -165,10 +158,10 @@ static void handle_interrupt(void) {
     CHECK(DOUBLE_Z);
 
     if (src & (SINGLE_X | SINGLE_Y | SINGLE_Z)) {
-        single_click();
+        reset_timer(TIMER_RED);
     }
     else {
-        double_click();
+        reset_timer(TIMER_GREEN);
     }
 }
 
