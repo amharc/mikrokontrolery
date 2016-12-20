@@ -11,7 +11,7 @@ int main() {
     //init_buttons();
     init_i2c();
 
-//    set_led(LED_GREEN2, 1);
+    set_led(LED_GREEN2, 1);
 
     for(;;) {
         uint8_t x = 0, y = 0, z = 0;
@@ -41,6 +41,6 @@ int main() {
 
 //        toggle_led(LED_GREEN2);
 
-        Delay(1000000);
+        Delay(100000000);
     }
 }
