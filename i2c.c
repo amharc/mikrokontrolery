@@ -41,7 +41,9 @@ void init_i2c(void) {
     I2C1->CCR = (PCLK1_MHZ * 1000 * 1000) / (I2C_SPEED_HZ << 1);
     I2C1->TRISE = PCLK1_MHZ + 1;
     I2C1->CR1 |= I2C_CR1_PE;
+}
 
+void init_accel(void) {
     i2c_accel_write(I2C_ACCEL_REG_CTRL1, 0);
     i2c_accel_write(I2C_ACCEL_REG_CTRL3, 0);
 
@@ -55,14 +57,6 @@ void init_i2c(void) {
     NVIC_EnableIRQ(EXTI1_IRQn);
 
     i2c_accel_write(I2C_ACCEL_REG_CTRL1, (1 << 6) | (1 << 2) | (1 << 1) | (1 << 0));
-    {
-        uint8_t reg;
-        i2c_accel_read(I2C_ACCEL_REG_CTRL1, &reg);
-        output("Register: ");
-        output_int(reg);
-        output("\r\n");
-    }
-    output("Enabled I2c accel\r\n");
 
 #define THRESHOLD 0x8
     i2c_accel_write(I2C_ACCEL_REG_CLICK_THSY_X, THRESHOLD | (THRESHOLD << 4));
@@ -72,8 +66,6 @@ void init_i2c(void) {
     i2c_accel_write(I2C_ACCEL_REG_CLICK_WINDOW, 0xff);
     i2c_accel_write(I2C_ACCEL_REG_CLICK_CFG, SINGLE_Z | DOUBLE_Z | SINGLE_X | DOUBLE_X | SINGLE_Y | DOUBLE_Y);
     i2c_accel_write(I2C_ACCEL_REG_CTRL3, 7);
-
-    set_led(LED_GREEN, 1);
 }
 
 #define STR(x) #x
