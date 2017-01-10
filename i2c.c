@@ -4,8 +4,6 @@
 #include <gpio.h>
 #include <stm32.h>
 #include "usart.h"
-#include "leds.h"
-#include "timer.h"
 
 #define I2C_SPEED_HZ 100000
 #define PCLK1_MHZ 16
@@ -22,7 +20,6 @@ void init_i2c(void) {
     GPIOafConfigure(GPIOB, 9, GPIO_OType_OD,
             GPIO_Low_Speed, GPIO_PuPd_NOPULL,
             GPIO_AF_I2C1);
-
 
     I2C1->CR1 = 0;
 

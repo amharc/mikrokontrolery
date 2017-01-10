@@ -65,16 +65,12 @@ struct coroutine_state_t {
     \
     static void name(void) { \
         static struct coroutine_state_t *state = &name ## _state; \
-        /*output("Control enters " #name ", line ="); \
-        output_int(state->line); \
-        output("\r\n"); */ \
         switch (state->line) { \
             case 0:
 
 #define ACCEL_END } state->line = 0; }
 
 #define ACCEL_WRITE(_reg, _value) \
-        /*output("Setting " #_reg " to " #_value "\r\n");*/ \
         state->write.reg = (_reg); \
         state->write.value = (_value); \
         state->line = __LINE__; \
@@ -83,7 +79,6 @@ struct coroutine_state_t {
         case __LINE__: \
 
 #define ACCEL_READ(_reg, _value) \
-        /*output("Reading " #_reg "\r\n");*/ \
         state->read.reg = (_reg); \
         state->read.value = &(_value); \
         state->line = __LINE__; \
@@ -124,27 +119,10 @@ ACCEL_COROUTINE(handle_interrupt) {
         ACCEL_READ(I2C_ACCEL_REG_CLICK_SRC, src);
     } while (!(src & CLICK_SRC_IA));
 
-    output("Interrupt: ");
-    output_int(src);
-    output("\r\n");
-
-#define CHECK(MACRO) \
-    if (src & MACRO) { \
-        output(#MACRO "detected\r\n");\
-    }
-
-    CHECK(SINGLE_X);
-    CHECK(DOUBLE_X);
-
-    CHECK(SINGLE_Y);
-    CHECK(DOUBLE_Y);
-
-    CHECK(SINGLE_Z);
-    CHECK(DOUBLE_Z);
-
     if (src & (SINGLE_X | SINGLE_Y | SINGLE_Z)) {
         reset_timer(TIMER_RED);
     }
+
     if (src & (DOUBLE_X | DOUBLE_Y | DOUBLE_Z)) {
         reset_timer(TIMER_GREEN);
     }
