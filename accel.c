@@ -24,9 +24,75 @@
 #define SINGLE_Z (1 << 4)
 #define DOUBLE_Z (1 << 5)
 
+static void init_accel_phase2(void);
+
 void init_accel(void) {
-    accel_write(I2C_ACCEL_REG_CTRL1, 0);
-    accel_write(I2C_ACCEL_REG_CTRL3, 0);
+    init_accel_phase2();
+}
+
+struct coroutine_state_t {
+    struct i2c_write_request_t write;
+    struct i2c_read_request_t read;
+    int line; 
+};
+
+#define ACCEL_COROUTINE(name) \
+    static void name ## _error(void); \
+    static void name(void); \
+    static struct coroutine_state_t name ## _state =\
+        { .write = \
+            { .addr = LIS35DE_ADDR \
+            , .reg = 0 \
+            , .value = 0 \
+            , .on_success = &name \
+            , .on_error = &name ## _error\
+            }\
+        , .read =\
+            { .addr = LIS35DE_ADDR \
+            , .reg = 0 \
+            , .value = NULL \
+            , .on_success = &name \
+            , .on_error = &name ## _error \
+            }\
+        , .line = 0\
+        };\
+    static void name ## _error(void) {\
+        output("Error in " #name ", line"); \
+        output_int(name ## _state . line); \
+        output("\r\n"); \
+    }\
+    \
+    static void name(void) { \
+        static struct coroutine_state_t *state = &name ## _state; \
+        output("Control enters " #name ", line ="); \
+        output_int(state->line); \
+        output("\r\n"); \
+        switch (state->line) { \
+            case 0:
+
+#define ACCEL_END } state->line = 0; }
+
+#define ACCEL_WRITE(_reg, _value) \
+        output("Setting " #_reg " to " #_value "\r\n"); \
+        state->write.reg = (_reg); \
+        state->write.value = (_value); \
+        state->line = __LINE__; \
+        i2c_write(state->write); \
+        return; \
+        case __LINE__: \
+
+#define ACCEL_READ(_reg, _value) \
+        output("Reading " #_reg "\r\n"); \
+        state->read.reg = (_reg); \
+        state->read.value = &(_value); \
+        state->line = __LINE__; \
+        i2c_read(state->read); \
+        return; \
+        case __LINE__: \
+
+ACCEL_COROUTINE(init_accel_phase2) {
+    ACCEL_WRITE(I2C_ACCEL_REG_CTRL1, 0);
+    ACCEL_WRITE(I2C_ACCEL_REG_CTRL3, 0);
 
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 
@@ -37,23 +103,27 @@ void init_accel(void) {
     NVIC_SetPriority(EXTI1_IRQn, 2);
     NVIC_EnableIRQ(EXTI1_IRQn);
 
-    accel_write(I2C_ACCEL_REG_CTRL1, (1 << 6) | (1 << 2) | (1 << 1) | (1 << 0));
+
+    ACCEL_WRITE(I2C_ACCEL_REG_CTRL1, (1 << 6) | (1 << 2) | (1 << 1) | (1 << 0));
 
 #define THRESHOLD 0x8
-    accel_write(I2C_ACCEL_REG_CLICK_THSY_X, THRESHOLD | (THRESHOLD << 4));
-    accel_write(I2C_ACCEL_REG_CLICK_THSZ, THRESHOLD);
-    accel_write(I2C_ACCEL_REG_CLICK_TIMELIMIT, 0x03);
-    accel_write(I2C_ACCEL_REG_CLICK_LATENCY, 0x06);
-    accel_write(I2C_ACCEL_REG_CLICK_WINDOW, 0xff);
-    accel_write(I2C_ACCEL_REG_CLICK_CFG, SINGLE_Z | DOUBLE_Z | SINGLE_X | DOUBLE_X | SINGLE_Y | DOUBLE_Y);
-    accel_write(I2C_ACCEL_REG_CTRL3, 7);
+    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_THSY_X, THRESHOLD | (THRESHOLD << 4));
+    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_THSZ, THRESHOLD);
+    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_TIMELIMIT, 0x03);
+    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_LATENCY, 0x06);
+    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_WINDOW, 0xff);
+    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_CFG, SINGLE_Z | DOUBLE_Z | SINGLE_X | DOUBLE_X | SINGLE_Y | DOUBLE_Y);
+    ACCEL_WRITE(I2C_ACCEL_REG_CTRL3, 7);
 }
+ACCEL_END
 
-static void handle_interrupt(void) {
+ACCEL_COROUTINE(handle_interrupt) {
     uint8_t src;
-    accel_read(I2C_ACCEL_REG_CLICK_SRC, &src);
+    ACCEL_READ(I2C_ACCEL_REG_CLICK_SRC, src);
 
     output("Interrupt: ");
+    output_int(src);
+    output("\r\n");
 
 #define CHECK(MACRO) \
     if (src & MACRO) { \
@@ -72,23 +142,21 @@ static void handle_interrupt(void) {
     if (src & (SINGLE_X | SINGLE_Y | SINGLE_Z)) {
         reset_timer(TIMER_RED);
     }
-    else {
+    if (src & (DOUBLE_X | DOUBLE_Y | DOUBLE_Z)) {
         reset_timer(TIMER_GREEN);
     }
 }
+ACCEL_END
 
 void EXTI1_IRQHandler(void) {
     if (EXTI->PR & EXTI_PR_PR1) {
         EXTI->PR = EXTI_PR_PR1;
-        handle_interrupt();
+        if (handle_interrupt_state.line != 0) {
+            output("Interrupt handler is busy. This should not happen.\r\n");
+        }
+        else {
+            handle_interrupt();
+        }
     }
 
-}
-
-int accel_write(uint8_t reg, uint8_t value) {
-    return i2c_write(LIS35DE_ADDR, reg, value);
-}
-
-int accel_read(uint8_t reg, uint8_t *value) {
-    return i2c_read(LIS35DE_ADDR, reg, value);
 }

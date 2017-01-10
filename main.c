@@ -20,21 +20,6 @@ int main() {
     for(;;) {
         uint8_t x = 0, y = 0, z = 0;
 
-        if (accel_read(I2C_ACCEL_REG_X, &x)) {
-            output("Failed to read X\r\n");
-            continue;
-        }
-
-        if (accel_read(I2C_ACCEL_REG_Y, &y)) {
-            output("Failed to read Y\r\n");
-            continue;
-        }
-
-        if (accel_read(I2C_ACCEL_REG_Z, &z)) {
-            output("Failed to read Z\r\n");
-            continue;
-        }
-
         output("Read: ");
         output_int(x);
         output(", ");
