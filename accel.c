@@ -23,6 +23,7 @@
 #define DOUBLE_Y (1 << 3)
 #define SINGLE_Z (1 << 4)
 #define DOUBLE_Z (1 << 5)
+#define CLICK_SRC_IA (1 << 6)
 
 static void init_accel_phase2(void);
 
@@ -64,16 +65,16 @@ struct coroutine_state_t {
     \
     static void name(void) { \
         static struct coroutine_state_t *state = &name ## _state; \
-        output("Control enters " #name ", line ="); \
+        /*output("Control enters " #name ", line ="); \
         output_int(state->line); \
-        output("\r\n"); \
+        output("\r\n"); */ \
         switch (state->line) { \
             case 0:
 
 #define ACCEL_END } state->line = 0; }
 
 #define ACCEL_WRITE(_reg, _value) \
-        output("Setting " #_reg " to " #_value "\r\n"); \
+        /*output("Setting " #_reg " to " #_value "\r\n");*/ \
         state->write.reg = (_reg); \
         state->write.value = (_value); \
         state->line = __LINE__; \
@@ -82,7 +83,7 @@ struct coroutine_state_t {
         case __LINE__: \
 
 #define ACCEL_READ(_reg, _value) \
-        output("Reading " #_reg "\r\n"); \
+        /*output("Reading " #_reg "\r\n");*/ \
         state->read.reg = (_reg); \
         state->read.value = &(_value); \
         state->line = __LINE__; \
@@ -100,7 +101,7 @@ ACCEL_COROUTINE(init_accel_phase2) {
             EXTI_Mode_Interrupt,
             EXTI_Trigger_Rising);
     EXTI->PR |= EXTI_PR_PR1;
-    NVIC_SetPriority(EXTI1_IRQn, 2);
+    NVIC_SetPriority(EXTI1_IRQn, 1);
     NVIC_EnableIRQ(EXTI1_IRQn);
 
 
@@ -118,8 +119,10 @@ ACCEL_COROUTINE(init_accel_phase2) {
 ACCEL_END
 
 ACCEL_COROUTINE(handle_interrupt) {
-    uint8_t src;
-    ACCEL_READ(I2C_ACCEL_REG_CLICK_SRC, src);
+    static uint8_t src = 0;
+    do {
+        ACCEL_READ(I2C_ACCEL_REG_CLICK_SRC, src);
+    } while (!(src & CLICK_SRC_IA));
 
     output("Interrupt: ");
     output_int(src);

@@ -86,9 +86,6 @@ static void receive_bit(uint8_t sr1) {
 
 void I2C1_EV_IRQHandler(void) {
     uint8_t sr1 = I2C1->SR1;
-    output("Receive bit: ");
-    output_int(sr1);
-    output("\r\n");
     receive_bit(sr1);
 }
 
@@ -102,13 +99,11 @@ void I2C1_ER_IRQHanlder(void) {
 #define START switch(state.state) { case 0:
 
 #define WAIT_FOR(bit) \
-    output("Waiting for " #bit "...\r\n"); \
-    if (!(sr1 & bit)) return; \
-    output("Got it!\r\n");
+    if (!(sr1 & bit)) return;
 
 #define YIELD state.state = __LINE__; return; case __LINE__:
 
-#define RETURN output("Returning\r\n"); state.state = 0; state.mode = MODE_NONE; }
+#define FINISH state.state = 0; state.mode = MODE_NONE; }
 
 static void write_receive_bit(uint8_t sr1) {
     START WAIT_FOR(I2C_SR1_SB);
@@ -120,7 +115,7 @@ static void write_receive_bit(uint8_t sr1) {
         I2C1->DR = state.write.value;
     YIELD WAIT_FOR(I2C_SR1_BTF);
         I2C1->CR1 |= I2C_CR1_STOP;
-    RETURN
+    FINISH
         state.write.on_success();
 }
 
@@ -140,17 +135,15 @@ static void read_receive_bit(uint8_t sr1) {
         I2C1->CR1 |= I2C_CR1_STOP;
     YIELD WAIT_FOR(I2C_SR1_RXNE);
         *state.read.value = I2C1->DR;
-    RETURN
-    state.read.on_success();
+    FINISH
+        state.read.on_success();
 }
 
 int i2c_write(struct i2c_write_request_t request) {
     irq_level_t irq_level = IRQprotect(IRQ_LEVEL);
 
-    output("i2c_write called\r\n");
-
     if (state.mode != MODE_NONE) {
-        output("aborted\r\n");
+        output("write aborted\r\n");
         IRQunprotect(irq_level);
         return 1;
     }
@@ -168,6 +161,7 @@ int i2c_read(struct i2c_read_request_t request) {
     irq_level_t irq_level = IRQprotect(IRQ_LEVEL);
 
     if (state.mode != MODE_NONE) {
+        output("read aborted\r\n");
         IRQunprotect(irq_level);
         return 1;
     }
