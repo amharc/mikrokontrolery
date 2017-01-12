@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#define ACCEL_IRQ_LEVEL 2
 
 void init_accel(void);

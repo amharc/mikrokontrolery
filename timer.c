@@ -5,8 +5,13 @@
 #include "usart.h"
 #include "leds.h"
 
+#define TIMERS(X) \
+    X(TIM2, TIMER_RED, LED_RED) \
+    X(TIM5, TIMER_GREEN, LED_GREEN)
+
+/* Initialises timers */
 void init_timer(void) {
-#define INIT(TIMER) \
+#define X(TIMER, CONSTANT, LED) \
     { \
         RCC->APB1ENR |= RCC_APB1ENR_ ## TIMER ## EN; \
         TIMER->CR1 = 0; \
@@ -19,43 +24,36 @@ void init_timer(void) {
         TIMER->CR1 |= TIM_CR1_CEN; \
     }
 
-    INIT(TIM2);
-    INIT(TIM5);
+    TIMERS(X)
+#undef X
 }
 
 void reset_timer(enum timer_select_t timer) {
     switch (timer) {
-        case TIMER_RED:
-            set_led(LED_RED, 1);
-            TIM2->CNT = 0;
+#define X(TIMER, CONSTANT, LED) \
+        case CONSTANT: \
+            set_led(LED, 1); \
+            TIMER->CNT = 0; \
             break;
-        case TIMER_GREEN:
-            set_led(LED_GREEN, 1);
-            TIM5->CNT = 0;
-            break;
+
+        TIMERS(X)
+#undef X
     }
 }
 
-void TIM2_IRQHandler(void) {
-    uint32_t it_status = TIM2->SR & TIM2->DIER;
-    output("TIM2\r\n");
-    if (it_status & TIM_SR_UIF) {
-        TIM2->SR = ~TIM_SR_UIF;
-    }
-    if (it_status & TIM_SR_CC1IF) {
-        TIM2->SR = ~TIM_SR_CC1IF;
-    }
-    set_led(LED_RED, 0);
-}
 
-void TIM5_IRQHandler(void) {
-    uint32_t it_status = TIM5->SR & TIM5->DIER;
-    output("TIM5\r\n");
-    if (it_status & TIM_SR_UIF) {
-        TIM5->SR = ~TIM_SR_UIF;
+#define X(TIMER, CONSTANT, LED) \
+    void TIMER ## _IRQHandler(void) {  \
+        uint32_t it_status = TIMER->SR & TIMER->DIER; \
+        if (it_status & TIM_SR_UIF) { \
+            TIMER->SR = ~TIM_SR_UIF; \
+        } \
+        if (it_status & TIM_SR_CC1IF) { \
+            TIMER->SR = ~TIM_SR_CC1IF; \
+        } \
+        set_led(LED, 0); \
     }
-    if (it_status & TIM_SR_CC1IF) {
-        TIM5->SR = ~TIM_SR_CC1IF;
-    }
-    set_led(LED_GREEN, 0);
-}
+
+TIMERS(X)
+
+#undef X
