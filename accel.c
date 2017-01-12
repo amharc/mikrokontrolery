@@ -168,5 +168,4 @@ void EXTI1_IRQHandler(void) {
             handle_interrupt();
         }
     }
-
 }

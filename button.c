@@ -21,7 +21,7 @@ void init_buttons(void) {
             EXTI_Mode_Interrupt, \
             EXTI_Trigger_Falling); \
     EXTI->PR |= FLAG; \
-    NVIC_SetPriority(IRQn, 2); \
+    NVIC_SetPriority(IRQn, BUTTON_INTERRUPT); \
     NVIC_EnableIRQ(IRQn);
 
     ALL_INTERRUPTS(INIT_INTERRUPT)

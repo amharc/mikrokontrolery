@@ -33,6 +33,7 @@
 #define Green2LEDoff() \
 	GREEN2_LED_GPIO->BSRRH = 1 << GREEN2_LED_PIN
 
+/* Initialises LEDS */
 void init_leds(void) {
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN |
 		RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOCEN;
@@ -69,9 +70,9 @@ void init_leds(void) {
 			GPIO_PuPd_NOPULL);
 }
 
-static char state[4];
+static bool state[4];
 
-char get_led(enum led led) {
+bool get_led(enum led led) {
     return state[led];
 }
 
@@ -79,7 +80,7 @@ void toggle_led(enum led led) {
     set_led(led, !get_led(led));
 }
 
-void set_led(enum led led, char on) {
+void set_led(enum led led, bool on) {
     state[led] = on;
     switch (led) {
         case LED_RED:

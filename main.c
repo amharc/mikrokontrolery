@@ -5,12 +5,10 @@
 #include "timer.h"
 #include "accel.h"
 
-#define CMD_LENGTH 7
-
 int main() {
     init_leds();
     init_usart();
-    //init_buttons();
+    init_buttons();
     init_timer();
     init_i2c();
     init_accel();
