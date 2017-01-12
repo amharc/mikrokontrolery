@@ -25,20 +25,39 @@
 #define DOUBLE_Z (1 << 5)
 #define CLICK_SRC_IA (1 << 6)
 
+/* The code below is asynchronous and uses a custom domain specific lanaguage to
+ * express asynchronicity as if the code was synchronous. The underlying mechanism
+ * is akin to (very limited) coroutines -- a function serves as a coroutine,
+ * which is basically static and not re-entrant, but saves its state in static variables
+ * and resumes execution on next call.
+ */
+
+/* A coroutine initialising the accelerometer */
 static void init_accel_phase2(void);
 
 void init_accel(void) {
     init_accel_phase2();
 }
 
+/* State of a general coroutine */
 struct coroutine_state_t {
-    struct i2c_write_request_t write;
-    struct i2c_read_request_t read;
+    union {
+        /* The write request currently performed */
+        struct i2c_write_request_t write;
+
+        /* The read request currently performed */
+        struct i2c_read_request_t read;
+    };
+
+    /* The line number to resume execution on from */
     int line; 
 };
 
+/* Declares a corotuine */
 #define ACCEL_COROUTINE(name) \
+    /* Error handling function */ \
     static void name ## _error(void); \
+    /* The coroutine itself */ \
     static void name(void); \
     static struct coroutine_state_t name ## _state =\
         { .write = \
@@ -70,6 +89,8 @@ struct coroutine_state_t {
 
 #define ACCEL_END } state->line = 0; }
 
+/* Schedules an asynchronous write and resumes execution of the coroutine when the
+ * write has been finished */
 #define ACCEL_WRITE(_reg, _value) \
         state->write.reg = (_reg); \
         state->write.value = (_value); \
@@ -78,6 +99,8 @@ struct coroutine_state_t {
         return; \
         case __LINE__: \
 
+/* Schedules an asynchronous read and resumes execution of the coroutine when the
+ * read has been finished */
 #define ACCEL_READ(_reg, _value) \
         state->read.reg = (_reg); \
         state->read.value = &(_value); \
@@ -86,22 +109,28 @@ struct coroutine_state_t {
         return; \
         case __LINE__: \
 
+/* Initialises the accelerometer */
 ACCEL_COROUTINE(init_accel_phase2) {
+    /* Turn it off */
     ACCEL_WRITE(I2C_ACCEL_REG_CTRL1, 0);
     ACCEL_WRITE(I2C_ACCEL_REG_CTRL3, 0);
 
+    /* Enable the clock */
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 
+    /* Configure lines */
     GPIOinConfigure(GPIOA, 1, GPIO_PuPd_UP,
             EXTI_Mode_Interrupt,
             EXTI_Trigger_Rising);
+
+    /* Enable interrupts */
     EXTI->PR |= EXTI_PR_PR1;
-    NVIC_SetPriority(EXTI1_IRQn, 1);
+    NVIC_SetPriority(EXTI1_IRQn, ACCEL_IRQ_LEVEL);
     NVIC_EnableIRQ(EXTI1_IRQn);
 
 
+    /* Set default parameters */
     ACCEL_WRITE(I2C_ACCEL_REG_CTRL1, (1 << 6) | (1 << 2) | (1 << 1) | (1 << 0));
-
 #define THRESHOLD 0x8
     ACCEL_WRITE(I2C_ACCEL_REG_CLICK_THSY_X, THRESHOLD | (THRESHOLD << 4));
     ACCEL_WRITE(I2C_ACCEL_REG_CLICK_THSZ, THRESHOLD);

@@ -16,18 +16,5 @@ int main() {
     init_accel();
 
     set_led(LED_GREEN2, 1);
-
-    for(;;) {
-        uint8_t x = 0, y = 0, z = 0;
-
-        output("Read: ");
-        output_int(x);
-        output(", ");
-        output_int(y);
-        output(", ");
-        output_int(z);
-        output("\r\n");
-
-        Delay(100000000);
-    }
+    return 0;
 }

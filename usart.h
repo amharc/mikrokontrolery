@@ -1,8 +1,12 @@
 #pragma once
 
+#define USART_IRQ_LEVEL
+
+/* Initialises USART */
 extern void init_usart(void);
-extern void maybe_in(void);
-extern void maybe_out(void);
+
+/** Enqueues the given string for transmission. Interrupt-safe */
 extern void output(const char *str);
-extern int input(char *dest, int length);
-void output_int(int number);
+
+/** Enqueues the given integer for transmission (as a decimal number). Interrupt-safe */
+extern void output_int(int number);

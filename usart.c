@@ -3,12 +3,20 @@
 #include <stm32.h>
 #include <gpio.h>
 
+/* Buffer length (in bytes) */
 #define BUFLEN 2048
 
+/* Utility macros */
 #define WRAP(x) ((x) & (BUFLEN - 1))
 #define INC(x) WRAP((x)+1)
 #define DEC(x) WRAP((x)+BUFLEN-1)
 
+/* A DMA cyclic buffer.
+ *
+ * [begin, middle) is being currently transmitted using DMA, it should not be modified
+ * [middle, end) is enqueued for transmission
+ * [end, begin) is free
+ */
 struct buffer {
     int begin, middle, end;
     char data[BUFLEN];
@@ -76,17 +84,20 @@ void DMA1_Stream6_IRQHandler() {
     }
 }
 
+/** Enqueues the given string for transmission. Interrupt-safe */
 void output(const char *str) {
     irq_level_t irq_level = IRQprotect(1);
 
-    while (*str && !buffer_full(&out_buffer))
+    while (*str && !buffer_full(&out_buffer)) {
         buffer_write(&out_buffer, *(str++));
+    }
 
     push_out();
 
     IRQunprotect(irq_level);
 }
 
+/** Enqueues the given integer for transmission (as a decimal number). Interrupt-safe */
 void output_int(int number) {
     char buf[11];
     int idx = 10;
@@ -114,7 +125,6 @@ void output_int(int number) {
         USART_CR1_TE)
 #define USART_Enable USART_CR1_UE
 
-
 #define USART_StopBits_1 0x0000
 
 #define USART_FlowControl_None 0x0000
@@ -135,9 +145,11 @@ void output_int(int number) {
 void init_usart(void) {
     uint32_t const baudrate = 9600U;
 
+    /* Enable the clock */
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_DMA1EN;
     RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
 
+    /* Configure the TXD line */
     GPIOafConfigure(GPIOA,
             2,
             GPIO_OType_PP,
@@ -145,6 +157,7 @@ void init_usart(void) {
             GPIO_PuPd_NOPULL,
             GPIO_AF_USART2);
 
+    /* Configure the RXD line */
     GPIOafConfigure(GPIOA,
             3,
             GPIO_OType_PP,
@@ -152,6 +165,7 @@ void init_usart(void) {
             GPIO_PuPd_UP,
             GPIO_AF_USART2);
 
+    /* Configure USART */
     USART2->CR1 = USART_Mode_Rx_Tx |
         USART_WordLength_8b |
         USART_Parity_No;
@@ -163,6 +177,7 @@ void init_usart(void) {
     USART2->BRR = (PCLK1_HZ + (baudrate / 2U)) /
         baudrate;
 
+    /* Configure DMA */
     DMA1_Stream6->CR = 4U << 25 |
         DMA_SxCR_PL_1 |
         DMA_SxCR_MINC |
@@ -178,11 +193,13 @@ void init_usart(void) {
 
     DMA1->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CTCIF5;
 
-    NVIC_SetPriority(DMA1_Stream6_IRQn, 1);
-    NVIC_SetPriority(DMA1_Stream5_IRQn, 1);
+    /* Enable interrupts */
+    NVIC_SetPriority(DMA1_Stream6_IRQn, USART_IRQ_LEVEL);
+    NVIC_SetPriority(DMA1_Stream5_IRQn, USART_IRQ_LEVEL);
 
     NVIC_EnableIRQ(DMA1_Stream6_IRQn);
     NVIC_EnableIRQ(DMA1_Stream5_IRQn);
 
+    /* Start USART */
     USART2->CR1 |= USART_Enable;
 }
