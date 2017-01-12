@@ -26,23 +26,6 @@ struct i2c_read_request_t {
 };
 
 /* Asynchronous write request. */
-struct i2c_read_request_t {
-    /* Source device's address */
-    uint8_t addr;
-
-    /* Source register */
-    uint8_t reg;
-
-    /* Where to save the value */
-    uint8_t *value;
-
-    /* Callback to be called on success */
-    handler_t on_success;
-
-    /* Callback to be called on error */
-    handler_t on_error;
-};
-
 struct i2c_write_request_t {
     /* Target device's address */
     uint8_t addr;

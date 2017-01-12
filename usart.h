@@ -1,6 +1,6 @@
 #pragma once
 
-#define USART_IRQ_LEVEL
+#define USART_IRQ_LEVEL 1
 
 /* Initialises USART */
 extern void init_usart(void);

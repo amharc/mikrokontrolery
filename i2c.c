@@ -125,7 +125,7 @@ void I2C1_ER_IRQHanlder(void) {
 #define START switch(state.state) { case 0:
 
 /* Waits for a condition to be satisfied. */
-#define WAIT_FOR(bit) if (!(cond)) return;
+#define WAIT_FOR(cond) if (!(cond)) return;
 
 /* Saves the current state (i.e. program counter = line number) */
 #define YIELD state.state = __LINE__; return; case __LINE__:
