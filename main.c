@@ -6,13 +6,13 @@
 #include "accel.h"
 
 int main() {
-  init_leds();
-  init_usart();
-  init_buttons();
-  init_timer();
-  init_i2c();
-  init_accel();
+    init_leds();
+    init_usart();
+    init_buttons();
+    init_timer();
+    init_i2c();
+    init_accel();
 
-  set_led(LED_GREEN2, 1);
-  return 0;
+    set_led(LED_GREEN2, 1);
+    return 0;
 }

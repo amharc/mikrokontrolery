@@ -9,38 +9,38 @@ typedef void (*handler_t)(void);
 
 /* Asynchronous read request. */
 struct i2c_read_request_t {
-  /* Source device's address */
-  uint8_t addr;
+    /* Source device's address */
+    uint8_t addr;
 
-  /* Source register */
-  uint8_t reg;
+    /* Source register */
+    uint8_t reg;
 
-  /* Where to save the value */
-  uint8_t *value;
+    /* Where to save the value */
+    uint8_t *value;
 
-  /* Callback to be called on success */
-  handler_t on_success;
+    /* Callback to be called on success */
+    handler_t on_success;
 
-  /* Callback to be called on error */
-  handler_t on_error;
+    /* Callback to be called on error */
+    handler_t on_error;
 };
 
 /* Asynchronous write request. */
 struct i2c_write_request_t {
-  /* Target device's address */
-  uint8_t addr;
+    /* Target device's address */
+    uint8_t addr;
 
-  /* Target register */
-  uint8_t reg;
+    /* Target register */
+    uint8_t reg;
 
-  /* Value to be saved */
-  uint8_t value;
+    /* Value to be saved */
+    uint8_t value;
 
-  /* Callback to be called on success */
-  handler_t on_success;
+    /* Callback to be called on success */
+    handler_t on_success;
 
-  /* Callback to be called on error */
-  handler_t on_error;
+    /* Callback to be called on error */
+    handler_t on_error;
 };
 
 /* Initiliases I2C */
