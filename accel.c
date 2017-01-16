@@ -7,16 +7,23 @@
 #include "timer.h"
 #include "accel.h"
 
+/* Configuration options */
+#define THRESHOLD 0x8
+#define TIMELIMIT 0x03
+#define LATENCY 0x06
+#define WINDOW 0xff
+
+/* Flags */
 #define LIS35DE_ADDR 0x1C
-#define I2C_ACCEL_REG_CTRL1 0x20
-#define I2C_ACCEL_REG_CTRL3 0x22
-#define I2C_ACCEL_REG_CLICK_CFG 0x38
-#define I2C_ACCEL_REG_CLICK_SRC 0x39
-#define I2C_ACCEL_REG_CLICK_THSY_X 0x3B
-#define I2C_ACCEL_REG_CLICK_THSZ 0x3C
-#define I2C_ACCEL_REG_CLICK_TIMELIMIT 0x3D
-#define I2C_ACCEL_REG_CLICK_LATENCY 0x3E
-#define I2C_ACCEL_REG_CLICK_WINDOW 0x3F
+#define REG_CTRL1 0x20
+#define REG_CTRL3 0x22
+#define REG_CLICK_CFG 0x38
+#define REG_CLICK_SRC 0x39
+#define REG_CLICK_THSY_X 0x3B
+#define REG_CLICK_THSZ 0x3C
+#define REG_CLICK_TIMELIMIT 0x3D
+#define REG_CLICK_LATENCY 0x3E
+#define REG_CLICK_WINDOW 0x3F
 #define SINGLE_X (1 << 0)
 #define DOUBLE_X (1 << 1)
 #define SINGLE_Y (1 << 2)
@@ -24,6 +31,11 @@
 #define SINGLE_Z (1 << 4)
 #define DOUBLE_Z (1 << 5)
 #define CLICK_SRC_IA (1 << 6)
+#define CTRL1_POWER_ACTIVE (1 << 6)
+#define CTRL1_Z_ENABLE (1 << 2)
+#define CTRL1_Y_ENABLE (1 << 1)
+#define CTRL1_X_ENABLE (1 << 0)
+#define CTRL3_CLICK_INTERRUPT 0x07
 
 /* The code below is asynchronous and uses a custom domain specific lanaguage to
  * express asynchronicity as if the code was synchronous. The underlying
@@ -110,8 +122,8 @@ struct coroutine_state_t {
 /* Initialises the accelerometer */
 ACCEL_COROUTINE(init_accel_phase2) {
     /* Turn it off */
-    ACCEL_WRITE(I2C_ACCEL_REG_CTRL1, 0);
-    ACCEL_WRITE(I2C_ACCEL_REG_CTRL3, 0);
+    ACCEL_WRITE(REG_CTRL1, 0);
+    ACCEL_WRITE(REG_CTRL3, 0);
 
     /* Enable the clock */
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
@@ -126,23 +138,23 @@ ACCEL_COROUTINE(init_accel_phase2) {
     NVIC_EnableIRQ(EXTI1_IRQn);
 
     /* Set default parameters */
-    ACCEL_WRITE(I2C_ACCEL_REG_CTRL1, (1 << 6) | (1 << 2) | (1 << 1) | (1 << 0));
-#define THRESHOLD 0x8
-    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_THSY_X, THRESHOLD | (THRESHOLD << 4));
-    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_THSZ, THRESHOLD);
-    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_TIMELIMIT, 0x03);
-    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_LATENCY, 0x06);
-    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_WINDOW, 0xff);
-    ACCEL_WRITE(I2C_ACCEL_REG_CLICK_CFG, SINGLE_Z | DOUBLE_Z | SINGLE_X |
-                                             DOUBLE_X | SINGLE_Y | DOUBLE_Y);
-    ACCEL_WRITE(I2C_ACCEL_REG_CTRL3, 7);
+    ACCEL_WRITE(REG_CTRL1, CTRL1_POWER_ACTIVE | CTRL1_X_ENABLE |
+                               CTRL1_Y_ENABLE | CTRL1_Z_ENABLE);
+    ACCEL_WRITE(REG_CLICK_THSY_X, THRESHOLD | (THRESHOLD << 4));
+    ACCEL_WRITE(REG_CLICK_THSZ, THRESHOLD);
+    ACCEL_WRITE(REG_CLICK_TIMELIMIT, TIMELIMIT);
+    ACCEL_WRITE(REG_CLICK_LATENCY, LATENCY);
+    ACCEL_WRITE(REG_CLICK_WINDOW, WINDOW);
+    ACCEL_WRITE(REG_CLICK_CFG, SINGLE_Z | DOUBLE_Z | SINGLE_X | DOUBLE_X |
+                                   SINGLE_Y | DOUBLE_Y);
+    ACCEL_WRITE(REG_CTRL3, CTRL3_CLICK_INTERRUPT);
 }
 ACCEL_END
 
 ACCEL_COROUTINE(handle_interrupt) {
     static uint8_t src = 0;
     do {
-        ACCEL_READ(I2C_ACCEL_REG_CLICK_SRC, src);
+        ACCEL_READ(REG_CLICK_SRC, src);
     } while (!(src & CLICK_SRC_IA));
 
     if (src & (SINGLE_X | SINGLE_Y | SINGLE_Z)) {
