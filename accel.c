@@ -157,6 +157,20 @@ ACCEL_COROUTINE(handle_interrupt) {
         ACCEL_READ(REG_CLICK_SRC, src);
     } while (!(src & CLICK_SRC_IA));
 
+#define CHECK(CONSTANT)                                                        \
+    do {                                                                       \
+        if (src & CONSTANT) {                                                  \
+            output(#CONSTANT " detected\r\n");                                 \
+        }                                                                      \
+    } while (0)
+
+    CHECK(SINGLE_X);
+    CHECK(SINGLE_Y);
+    CHECK(SINGLE_Z);
+    CHECK(DOUBLE_X);
+    CHECK(DOUBLE_Y);
+    CHECK(DOUBLE_Z);
+
     if (src & (SINGLE_X | SINGLE_Y | SINGLE_Z)) {
         reset_timer(TIMER_RED);
     }

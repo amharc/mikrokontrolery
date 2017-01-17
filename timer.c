@@ -33,6 +33,7 @@ void reset_timer(enum timer_select_t timer) {
 #define X(TIMER, CONSTANT, LED)                                                \
     case CONSTANT:                                                             \
         set_led(LED, 1);                                                       \
+        output("led " #LED " on\r\n");                                         \
         TIMER->CNT = 0;                                                        \
         break;
 
@@ -44,6 +45,7 @@ void reset_timer(enum timer_select_t timer) {
 #define X(TIMER, CONSTANT, LED)                                                \
     void TIMER##_IRQHandler(void) {                                            \
         uint32_t it_status = TIMER->SR & TIMER->DIER;                          \
+        output(#TIMER " fired: resetting led " #LED "\r\n");                   \
         if (it_status & TIM_SR_UIF) {                                          \
             TIMER->SR = ~TIM_SR_UIF;                                           \
         }                                                                      \

@@ -4,6 +4,7 @@
 #include "i2c.h"
 #include "timer.h"
 #include "accel.h"
+#include <stm32.h>
 
 int main() {
     init_leds();
@@ -14,5 +15,7 @@ int main() {
     init_accel();
 
     set_led(LED_GREEN2, 1);
-    return 0;
+
+    for (;;)
+        __WFI();
 }

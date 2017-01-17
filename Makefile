@@ -7,7 +7,8 @@ CFLAGS = $(FLAGS) -Wall -g \
 	-O2 -ffunction-sections -fdata-sections \
 	-I/opt/arm/stm32/inc \
 	-I/opt/arm/stm32/CMSIS/Include \
-	-I/opt/arm/stm32/CMSIS/Device/ST/STM32F4xx/Include
+	-I/opt/arm/stm32/CMSIS/Device/ST/STM32F4xx/Include \
+	-flto
 LDFLAGS = $(FLAGS) -Wl,--gc-sections -nostartfiles \
 	-L/opt/arm/stm32/lds -Tstm32f411re.lds
 

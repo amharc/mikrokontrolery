@@ -4,7 +4,7 @@
 #include <gpio.h>
 
 /* Buffer length (in bytes) */
-#define BUFLEN 2048
+#define BUFLEN 4096
 
 /* Utility macros */
 #define WRAP(x) ((x) & (BUFLEN - 1))
