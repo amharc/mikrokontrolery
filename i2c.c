@@ -24,8 +24,8 @@ void init_i2c(void) {
     I2C1->CR1 = 0;
 
     /* Enable interrupts */
-    NVIC_SetPriority(DMA1_Stream6_IRQn, I2C_IRQ_LEVEL);
-    NVIC_SetPriority(DMA1_Stream5_IRQn, I2C_IRQ_LEVEL);
+    NVIC_SetPriority(I2C1_EV_IRQn, I2C_IRQ_LEVEL);
+    NVIC_SetPriority(I2C1_ER_IRQn, I2C_IRQ_LEVEL);
 
     NVIC_EnableIRQ(I2C1_EV_IRQn);
     NVIC_EnableIRQ(I2C1_ER_IRQn);

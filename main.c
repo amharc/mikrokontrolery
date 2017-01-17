@@ -9,10 +9,10 @@
 int main() {
     init_leds();
     init_usart();
-    init_buttons();
     init_timer();
     init_i2c();
     init_accel();
+    init_buttons();
 
     set_led(LED_GREEN2, 1);
 

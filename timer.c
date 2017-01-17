@@ -16,9 +16,9 @@ void init_timer(void) {
         RCC->APB1ENR |= RCC_APB1ENR_##TIMER##EN;                               \
         TIMER->CR1 = 0;                                                        \
         TIMER->PSC = 16 * 3 - 1;                                               \
-        TIMER->ARR = 1000000;                                                  \
+        TIMER->ARR = 1000000 - 1;                                              \
         TIMER->EGR = TIM_EGR_UG;                                               \
-        TIMER->SR = ~(TIM_SR_UIF | TIM_SR_CC1IF);                              \
+        TIMER->SR = ~TIM_SR_UIF;                                               \
         TIMER->DIER = TIM_DIER_UIE;                                            \
         NVIC_EnableIRQ(TIMER##_IRQn);                                          \
         NVIC_SetPriority(TIMER##_IRQn, TIMERS_IRQ_LEVEL);                      \
@@ -49,9 +49,6 @@ void reset_timer(enum timer_select_t timer) {
         output(#TIMER " fired: resetting led " #LED "\r\n");                   \
         if (it_status & TIM_SR_UIF) {                                          \
             TIMER->SR = ~TIM_SR_UIF;                                           \
-        }                                                                      \
-        if (it_status & TIM_SR_CC1IF) {                                        \
-            TIMER->SR = ~TIM_SR_CC1IF;                                         \
         }                                                                      \
         set_led(LED, 0);                                                       \
     }

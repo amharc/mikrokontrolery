@@ -86,7 +86,7 @@ void DMA1_Stream6_IRQHandler() {
 
 /** Enqueues the given string for transmission. Interrupt-safe */
 void output(const char *str) {
-    irq_level_t irq_level = IRQprotect(1);
+    irq_level_t irq_level = IRQprotect(USART_IRQ_LEVEL);
 
     while (*str && !buffer_full(&out_buffer)) {
         buffer_write(&out_buffer, *(str++));
@@ -102,7 +102,7 @@ void output(const char *str) {
 void output_int(int number) {
     char buf[11];
     int idx = 10;
-    irq_level_t irq_level = IRQprotect(1);
+    irq_level_t irq_level = IRQprotect(USART_IRQ_LEVEL);
 
     if (number == 0) {
         output("0");
