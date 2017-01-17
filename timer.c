@@ -21,6 +21,7 @@ void init_timer(void) {
         TIMER->SR = ~(TIM_SR_UIF | TIM_SR_CC1IF);                              \
         TIMER->DIER = TIM_DIER_UIE;                                            \
         NVIC_EnableIRQ(TIMER##_IRQn);                                          \
+        NVIC_SetPriority(TIMER##_IRQn, TIMERS_IRQ_LEVEL);                      \
         TIMER->CR1 |= TIM_CR1_CEN;                                             \
     }
 
